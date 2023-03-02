@@ -7,19 +7,44 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import java.io.*
+import java.security.MessageDigest
 import java.text.StringCharacterIterator
+import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
+import javax.crypto.CipherOutputStream
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 @Composable
 fun FilePicker(
     show: Boolean,
     onFileSelected: (Uri?) -> Unit
 ) {
-    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { result ->
-        onFileSelected(result)
-    }
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { result ->
+            onFileSelected(result)
+        }
 
     LaunchedEffect(show) {
-        if(show) {
+        if (show) {
+            launcher.launch("*/*")
+        }
+    }
+}
+
+@Composable
+fun SaveFile(
+    show: Boolean,
+    onFileSelected: (Uri?) -> Unit
+) {
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.CreateDocument("*/*")) { result ->
+            onFileSelected(result)
+        }
+
+    LaunchedEffect(show) {
+        if (show) {
             launcher.launch("*/*")
         }
     }
@@ -45,9 +70,84 @@ fun getFileName(cr: ContentResolver, uri: Uri): String {
 
     cr.query(uri, projection, null, null, null)?.use { metaCursor ->
         if (metaCursor.moveToFirst()) {
-           name = metaCursor.getString(0).toString()
+            name = metaCursor.getString(0).toString()
         }
     }
 
     return name
+}
+
+
+class Crypto {
+    companion object {
+        fun decrypt(data: ByteArray, key: String): ByteArray? {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val iv = IvParameterSpec(ByteArray(16))
+            val k = SecretKeySpec(key.padEnd(16, 'a').toByteArray(), "AES")
+            cipher.init(Cipher.DECRYPT_MODE, k, iv)
+            return try {
+                cipher.doFinal(data)
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+
+        fun encrypt(data: ByteArray, key: String): ByteArray {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val iv = IvParameterSpec(ByteArray(16))
+            val k = SecretKeySpec(key.padEnd(16, 'a').toByteArray(), "AES")
+            cipher.init(Cipher.ENCRYPT_MODE, k, iv)
+            return cipher.doFinal(data)
+        }
+
+        fun encrypt(
+            iss: InputStream,
+            fos: OutputStream,
+            key: String
+        ) {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val iv = IvParameterSpec(ByteArray(16))
+            val k = SecretKeySpec(key.padEnd(16, 'a').toByteArray(), "AES")
+            cipher.init(Cipher.ENCRYPT_MODE, k, iv)
+
+            val cis = CipherInputStream(iss, cipher)
+            val buffer = ByteArray(1024 * 2)
+            var length: Int
+            while (cis.read(buffer).also { length = it } != -1) {
+                fos.write(buffer, 0, length)
+            }
+            cis.close()
+        }
+
+        fun decrypt(iss: InputStream, fos: FileOutputStream, key: String) {
+            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+            val iv = IvParameterSpec(ByteArray(16))
+            val k = SecretKeySpec(key.padEnd(16, 'a').toByteArray(), "AES")
+            cipher.init(Cipher.DECRYPT_MODE, k, iv)
+
+            val cos = CipherOutputStream(fos, cipher)
+            val buffer = ByteArray(1024)
+            var i: Int
+            while (iss.read(buffer).also { i = it } != -1) {
+                cos.write(buffer, 0, i)
+            }
+            cos.close()
+        }
+
+        fun checksum(data: InputStream): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(1024)
+            var read = data.read(buffer, 0, 1024)
+            while (read > -1) {
+                digest.update(buffer, 0, read)
+                read = data.read(buffer, 0, 1024)
+            }
+            return digest.digest().fold("") { str, it -> str + "%02x".format(it) }
+        }
+
+        fun osToIs(data: ByteArrayOutputStream): ByteArrayInputStream {
+            return ByteArrayInputStream(data.toByteArray())
+        }
+    }
 }
