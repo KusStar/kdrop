@@ -1,13 +1,11 @@
 package com.kuss.kdrop
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 
@@ -28,13 +26,15 @@ fun Home(navController: NavController) {
             Button(onClick = {
                 navController.navigate("crypto")
             }) {
-                Text(text = "Encrypt/Decrypt")
+                Text(text = "Encrypt/Decrypt Test")
             }
+
+            Spacer(modifier = Modifier.size(8.dp))
 
             Button(onClick = {
                 navController.navigate("picker")
             }) {
-                Text(text = "Picker")
+                Text(text = "Send And Receive Test")
             }
         }
     }

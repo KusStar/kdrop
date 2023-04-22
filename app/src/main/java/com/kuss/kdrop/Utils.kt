@@ -7,9 +7,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import java.io.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.security.MessageDigest
 import java.text.StringCharacterIterator
+import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
@@ -50,7 +55,7 @@ fun SaveFile(
     }
 }
 
-fun formatBytes(input: Int): String {
+fun formatBytes(input: Long): String {
     var bytes = input
     if (-1000 < bytes && bytes < 1000) {
         return "$bytes B"
@@ -105,7 +110,9 @@ class Crypto {
             iss: InputStream,
             fos: OutputStream,
             key: String
-        ) {
+        ): String {
+            val digest = MessageDigest.getInstance("MD5")
+
             val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
             val iv = IvParameterSpec(ByteArray(16))
             val k = SecretKeySpec(key.padEnd(16, 'a').toByteArray(), "AES")
@@ -116,8 +123,22 @@ class Crypto {
             var length: Int
             while (cis.read(buffer).also { length = it } != -1) {
                 fos.write(buffer, 0, length)
+                digest.update(buffer, 0, length);
             }
+            fos.close()
             cis.close()
+
+            val md5Bytes = digest.digest()
+            return convertHashToString(md5Bytes)
+        }
+
+        private fun convertHashToString(md5Bytes: ByteArray): String {
+            var returnVal = ""
+            for (i in md5Bytes.indices) {
+                returnVal += ((md5Bytes[i].toInt() and 0xff) + 0x100).toString(16)
+                    .substring(1)
+            }
+            return returnVal.uppercase(Locale.getDefault())
         }
 
         fun decrypt(iss: InputStream, fos: FileOutputStream, key: String) {
@@ -151,3 +172,4 @@ class Crypto {
         }
     }
 }
+

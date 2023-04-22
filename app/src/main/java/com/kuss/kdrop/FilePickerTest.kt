@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,19 +26,35 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import com.orhanobut.logger.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Picker(navController: NavController) {
+fun SendAndReceiveTest(navController: NavController) {
     val context = LocalContext.current
     Scaffold(
-        topBar = { TopAppBar(title = { Text("FilePickerTest") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("FilePickerTest") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Filled.ArrowBack, "backIcon")
+                    }
+                },
+            )
+        },
     ) { it ->
         Column(
             verticalArrangement = Arrangement.Center,
@@ -59,21 +77,58 @@ fun Picker(navController: NavController) {
                     val iss = context.contentResolver.openInputStream(uri)
 
                     val name = getFileName(context.contentResolver, uri)
+                    val ext = name.substringAfterLast(".", "")
+
+                    Logger.d("$name, $ext")
+
                     if (iss != null) {
                         loading = true
                         CoroutineScope(Dispatchers.IO).launch {
                             runCatching {
-                                val size = formatBytes(iss.available())
+                                val size = formatBytes(iss.available().toLong())
                                 pickedFile = "$name - $size"
 
-                                val enTmpFile = File.createTempFile("kdrop", "encrypt")
+                                val enTmpFile = File.createTempFile("kdrop", ".encrypt.$ext")
                                 val enOutStream = FileOutputStream(enTmpFile)
 
-                                Crypto.encrypt(iss, enOutStream, "sec")
+                                val hash = Crypto.encrypt(iss, enOutStream, "sec")
 
-                                enTmpFile.canonicalFile.delete()
+                                Logger.d("encrypt done")
 
-                                Log.d("TEST", "encrypt done")
+                                Logger.d(
+                                    "${enTmpFile.name}, ${formatBytes(enTmpFile.length())}"
+                                )
+
+                                val requestBody: RequestBody = MultipartBody.Builder()
+                                    .setType(MultipartBody.FORM)
+                                    .addFormDataPart(
+                                        "file",
+                                        "$hash|$name|$ext",
+                                        enTmpFile
+                                            .asRequestBody("multipart/form-data".toMediaTypeOrNull())
+                                    )
+                                    .build()
+                                val request: Request = Request.Builder()
+                                    .url("http://localhost:3000/upload")
+                                    .post(requestBody)
+                                    .build()
+                                val client = OkHttpClient()
+
+                                client.newCall(request).enqueue(object : Callback {
+                                    override fun onFailure(call: Call, e: IOException) {
+                                        e.printStackTrace()
+
+                                        enTmpFile.canonicalFile.delete()
+                                    }
+
+                                    override fun onResponse(call: Call, response: Response) {
+                                        response.body?.let { it1 -> Logger.d(it1.string()) }
+
+                                        enTmpFile.canonicalFile.delete()
+                                    }
+                                })
+
+
                                 loading = false
                             }
                         }
@@ -135,8 +190,8 @@ fun Picker(navController: NavController) {
                                 }
                             }
                             if (!targets.any {
-                                it.contains(pos)
-                            }) {
+                                    it.contains(pos)
+                                }) {
                                 triggered = false
                             }
                         }
@@ -147,7 +202,6 @@ fun Picker(navController: NavController) {
             }) {
                 Text(text = "Receive a file")
             }
-
 
             SaveFile(show = showSaveFile, onFileSelected = { uri ->
                 showSaveFile = false

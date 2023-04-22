@@ -3,6 +3,8 @@ package com.kuss.kdrop
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +18,18 @@ import androidx.navigation.NavController
 @Composable
 fun CryptoTest(navController: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("CryptoTest") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("CryptoTest") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(Icons.Filled.ArrowBack, "backIcon")
+                    }
+                },
+            )
+        },
     ) { appIt ->
         Column(
 //            verticalArrangement = Arrangement.Center,
@@ -42,7 +55,7 @@ fun CryptoTest(navController: NavController) {
 
             TextField(value = text, onValueChange = {
                 text = it
-            },  modifier = Modifier.focusRequester(focusRequester))
+            }, modifier = Modifier.focusRequester(focusRequester))
 
             TextField(value = key, onValueChange = {
                 key = it
@@ -62,8 +75,12 @@ fun CryptoTest(navController: NavController) {
                 Text(text = "Decrypt")
             }
 
-            Text(log, modifier = Modifier
-                .verticalScroll(ss).fillMaxWidth().padding(16.dp))
+            Text(
+                log, modifier = Modifier
+                    .verticalScroll(ss)
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
 
             LaunchedEffect(log) {
                 ss.scrollTo(ss.maxValue)
