@@ -4,7 +4,7 @@ const multer = require('@koa/multer');
 const fs = require('fs')
 const path = require('path')
 
-const { db } = require('./db');
+// const { db } = require('./db');
 const { generatePasspharase } = require('./utils');
 
 const app = new Koa();
@@ -32,16 +32,16 @@ router.post(
   upload.single('file'),
   ctx => {
     const secret = generatePasspharase()
-    db.prepare(`
-      INSERT INTO files (secret, name, size, type, path)
-      VALUES (@secret, @name, @size, @type, @path)
-    `).run({
-      secret,
-      name: ctx.file.originalname,
-      size: ctx.file.size,
-      type: ctx.file.mimetype,
-      path: path.relative(__dirname, ctx.file.path)
-    })
+    // db.prepare(`
+    //   INSERT INTO files (secret, name, size, type, path)
+    //   VALUES (@secret, @name, @size, @type, @path)
+    // `).run({
+    //   secret,
+    //   name: ctx.file.originalname,
+    //   size: ctx.file.size,
+    //   type: ctx.file.mimetype,
+    //   path: path.relative(__dirname, ctx.file.path)
+    // })
 
     console.log(new Date().toLocaleString(), 'upload', ctx.file.filename, 'done')
     ctx.body = {
