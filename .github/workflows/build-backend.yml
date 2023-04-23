@@ -20,4 +20,4 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_TOKEN }}
         addLatest: true
-        file: "{context}/Dockerfile.backend"
+        dockerfile: "Dockerfile.backend"
