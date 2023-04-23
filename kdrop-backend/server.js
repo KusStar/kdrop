@@ -27,6 +27,10 @@ const upload = multer({
   storage: diskStorage,
 });
 
+router.get('/', ctx => {
+  ctx.body = 'Hello Kdrop';
+})
+
 router.post(
   '/upload',
   upload.single('file'),
@@ -63,5 +67,6 @@ router.post(
 app.use(router.routes());
 app.use(router.allowedMethods());
 
+console.log('Server running on port 3000')
 // start the server
 app.listen(3000);
