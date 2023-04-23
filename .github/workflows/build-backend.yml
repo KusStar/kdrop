@@ -13,7 +13,10 @@ jobs:
         working-directory: kdrop-backend
     steps:
       - uses: actions/checkout@v3
-      
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Login in to Docker Registry
         run: docker login ${{ secrets.DOCKER_IMAGE }} -u ${{ secrets.DOCKER_REGISTRY }} -p ${{ secrets.DOCKER_TOKEN }}
 
