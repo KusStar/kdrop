@@ -25,3 +25,13 @@ jobs:
 
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_IMAGE }}
+
+      - name: Redeploy
+        uses: MultiMx/RancherRedeployAction@v2.0
+        with:
+          backend: ${{ secrets.rancher_backend }}}
+          access_key: ${{ secrets.rancher_access }}
+          secret_key: ${{ secrets.rancher_key }}
+          project: ${{ secrets.rancher_project }}}
+          namespace: ${{ secrets.rancher_namespace }}
+          workload: ${{ secrets.rancher_workload }}
