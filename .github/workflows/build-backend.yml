@@ -1,4 +1,4 @@
-name: Backend Build Docker Image CI
+name: Build Backend Docker Image CI
 
 on:
   workflow_dispatch:
@@ -10,9 +10,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./kdrop-backend
     steps:
     - uses: actions/checkout@v3
     
