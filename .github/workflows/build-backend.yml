@@ -18,7 +18,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login in to Docker Registry
-        run: docker login ${{ secrets.DOCKER_IMAGE }} -u ${{ secrets.DOCKER_REGISTRY }} -p ${{ secrets.DOCKER_TOKEN }}
+        run: docker login "${{ secrets.DOCKER_REGISTRY }}" -u "${{ secrets.DOCKER_USERNAME }}" -p "${{ secrets.DOCKER_TOKEN }}"
 
       - name: Build Docker Image
         run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_IMAGE }}
