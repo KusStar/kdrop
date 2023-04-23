@@ -109,7 +109,7 @@ fun SendAndReceiveTest(navController: NavController) {
                                     )
                                     .build()
                                 val request: Request = Request.Builder()
-                                    .url("http://localhost:3000/upload")
+                                    .url("$backendURL/upload")
                                     .post(requestBody)
                                     .build()
                                 val client = OkHttpClient()

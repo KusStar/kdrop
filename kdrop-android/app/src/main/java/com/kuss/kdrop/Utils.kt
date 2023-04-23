@@ -21,6 +21,8 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+val backendURL = if (BuildConfig.DEBUG) "http://localhost:3000" else "https://kdrop.ncuos.com"
+
 @Composable
 fun FilePicker(
     show: Boolean,
