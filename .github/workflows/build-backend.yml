@@ -3,21 +3,19 @@ name: Build Backend Docker Image CI
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kdrop-backend
     steps:
-    - uses: actions/checkout@v3
-    
-    - uses: mr-smithers-excellent/docker-build-push@v6
-      with:
-        image: ${{ secrets.DOCKER_IMAGE }}
-        registry: ${{ secrets.DOCKER_REGISTRY }}
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
-        addLatest: true
-        dockerfile: "./kdrop-backend/Dockerfile"
+      - uses: actions/checkout@v3
+      
+      - name: Login in to Docker Registry
+        run: docker login ${{ secrets.DOCKER_IMAGE }} -u ${{ secrets.DOCKER_REGISTRY }} -p ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build Docker Image
+        run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_IMAGE }}

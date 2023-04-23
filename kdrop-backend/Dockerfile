@@ -4,7 +4,7 @@ RUN mkdir -p /app
 
 WORKDIR /app
 
-COPY kdrop-backend /app
+COPY . /app
 
 RUN npm install
 
