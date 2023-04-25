@@ -1,6 +1,7 @@
 package com.kuss.kdrop
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
@@ -31,11 +32,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.Exception
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,9 +78,6 @@ fun SendAndReceiveTest(navController: NavController) {
                     val iss = context.contentResolver.openInputStream(uri)
 
                     val name = getFileName(context.contentResolver, uri)
-                    val ext = name.substringAfterLast(".", "")
-
-                    Logger.d("$name, $ext")
 
                     if (iss != null) {
                         loading = true
@@ -88,7 +86,7 @@ fun SendAndReceiveTest(navController: NavController) {
                                 val size = formatBytes(iss.available().toLong())
                                 pickedFile = "$name - $size"
 
-                                val enTmpFile = File.createTempFile("kdrop", ".encrypt.$ext")
+                                val enTmpFile = File.createTempFile("kdrop", ".encrypt")
                                 val enOutStream = FileOutputStream(enTmpFile)
 
                                 val hash = Crypto.encrypt(iss, enOutStream, "sec")
@@ -99,35 +97,17 @@ fun SendAndReceiveTest(navController: NavController) {
                                     "${enTmpFile.name}, ${formatBytes(enTmpFile.length())}"
                                 )
 
-                                val requestBody: RequestBody = MultipartBody.Builder()
-                                    .setType(MultipartBody.FORM)
-                                    .addFormDataPart(
-                                        "file",
-                                        "$hash|$name|$ext",
-                                        enTmpFile
-                                            .asRequestBody("multipart/form-data".toMediaTypeOrNull())
-                                    )
-                                    .build()
-                                val request: Request = Request.Builder()
-                                    .url("$backendURL/upload")
-                                    .post(requestBody)
-                                    .build()
-                                val client = OkHttpClient()
-
-                                client.newCall(request).enqueue(object : Callback {
-                                    override fun onFailure(call: Call, e: IOException) {
+                                uploadFile(enTmpFile, name, hash) { e, response ->
+                                    if (e != null) {
                                         e.printStackTrace()
-
-                                        enTmpFile.canonicalFile.delete()
-                                    }
-
-                                    override fun onResponse(call: Call, response: Response) {
+                                        // 清理临时文件
+                                        enTmpFile.canonicalFile.deleteOnExit()
+                                    } else if (response != null) {
                                         response.body?.let { it1 -> Logger.d(it1.string()) }
-
-                                        enTmpFile.canonicalFile.delete()
+                                        // 清理临时文件
+                                        enTmpFile.canonicalFile.deleteOnExit()
                                     }
-                                })
-
+                                }
 
                                 loading = false
                             }
@@ -197,22 +177,94 @@ fun SendAndReceiveTest(navController: NavController) {
                         }
                     })
 
+            var saveFileName by remember {
+                mutableStateOf("")
+            }
+            var tempFilePath by remember {
+                mutableStateOf("")
+            }
+
             Button(onClick = {
-                showSaveFile = true
+                downloadFile("leatherjackets-227") { err, res ->
+                    if (err != null) {
+                        err.printStackTrace()
+
+                    } else if (res?.body != null) {
+                        if (res.code != 200) {
+                            runOnUi {
+                                Toast.makeText(
+                                    context,
+                                    "出错了，${res.body!!.string()}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            return@downloadFile
+                        }
+                        saveFileName = getHeaderFileName(res) ?: return@downloadFile
+                        Logger.d("download done")
+                        val tempFile = File.createTempFile("kdrop", ".decrypt")
+                        val tfs = FileOutputStream(tempFile)
+                        try {
+                            Crypto.decrypt(res.body!!.byteStream(), tfs, "sec")
+                            Logger.d("decrypt done ${tempFile.path}")
+
+                            tempFilePath = tempFile.path
+                            showSaveFile = true
+                        } catch (e: IOException) {
+                            e.printStackTrace()
+                            runOnUi {
+                                Toast.makeText(
+                                    context,
+                                    "解密失败，请确保密钥无误",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            runOnUi {
+                                Toast.makeText(
+                                    context,
+                                    "出错了，请稍后再试",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                }
+
             }) {
                 Text(text = "Receive a file")
             }
 
-            SaveFile(show = showSaveFile, onFileSelected = { uri ->
-                showSaveFile = false
-                if (uri != null) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        runCatching {
-                            val os = context.contentResolver.openOutputStream(uri)
+            SaveFile(show = showSaveFile,
+                filename = saveFileName,
+                onFileSelected = { uri ->
+                    showSaveFile = false
+                    if (uri != null) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            runCatching {
+                                val os = context.contentResolver.openOutputStream(uri)
+                                val tempFile = File(tempFilePath)
+                                val tis = FileInputStream(tempFile)
+
+                                if (os == null) return@runCatching
+
+                                tis.use { input ->
+                                    os.use { output ->
+                                        input.copyTo(output)
+                                    }
+                                }
+
+                                os.close()
+                                tis.close()
+                                runOnUi {
+                                    Toast.makeText(context, "下载并解密成功", Toast.LENGTH_SHORT)
+                                        .show()
+                                }
+                            }
                         }
                     }
-                }
-            })
+                })
 
             if (loading) {
                 CircularProgressIndicator(
@@ -245,7 +297,6 @@ fun SendAndReceiveTest(navController: NavController) {
     }
 
 }
-
 
 @Composable
 fun CustomAlertDialog(

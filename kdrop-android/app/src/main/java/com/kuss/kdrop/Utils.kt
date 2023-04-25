@@ -3,10 +3,12 @@ package com.kuss.kdrop
 import android.content.ContentResolver
 import android.net.Uri
 import android.provider.MediaStore
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import android.text.TextUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Response
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
@@ -21,41 +23,6 @@ import javax.crypto.CipherOutputStream
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-val backendURL = if (BuildConfig.DEBUG) "http://localhost:3000" else "https://kdrop.ncuos.com"
-
-@Composable
-fun FilePicker(
-    show: Boolean,
-    onFileSelected: (Uri?) -> Unit
-) {
-    val launcher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { result ->
-            onFileSelected(result)
-        }
-
-    LaunchedEffect(show) {
-        if (show) {
-            launcher.launch("*/*")
-        }
-    }
-}
-
-@Composable
-fun SaveFile(
-    show: Boolean,
-    onFileSelected: (Uri?) -> Unit
-) {
-    val launcher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.CreateDocument("*/*")) { result ->
-            onFileSelected(result)
-        }
-
-    LaunchedEffect(show) {
-        if (show) {
-            launcher.launch("*/*")
-        }
-    }
-}
 
 fun formatBytes(input: Long): String {
     var bytes = input
@@ -155,6 +122,7 @@ class Crypto {
             while (iss.read(buffer).also { i = it } != -1) {
                 cos.write(buffer, 0, i)
             }
+            fos.close()
             cos.close()
         }
 
@@ -173,5 +141,30 @@ class Crypto {
             return ByteArrayInputStream(data.toByteArray())
         }
     }
+}
+
+fun runOnUi(cb: () -> Unit) {
+    CoroutineScope(Dispatchers.Default).launch {
+        withContext(Dispatchers.Main) {
+            cb()
+        }
+    }
+}
+
+fun getHeaderFileName(response: Response): String? {
+    var dispositionHeader = response.header("Content-Disposition")
+    if (!TextUtils.isEmpty(dispositionHeader)) {
+        dispositionHeader!!.replace("attachment;filename=", "")
+        dispositionHeader.replace("filename*=utf-8", "")
+        val strings = dispositionHeader.split("; ".toRegex()).dropLastWhile { it.isEmpty() }
+            .toTypedArray()
+        if (strings.size > 1) {
+            dispositionHeader = strings[1].replace("filename=", "")
+            dispositionHeader = dispositionHeader.replace("\"", "")
+            return dispositionHeader
+        }
+        return ""
+    }
+    return ""
 }
 
