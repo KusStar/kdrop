@@ -48,10 +48,18 @@ router.get('/', async ctx => {
     })
   }).then(rows => {
     ctx.status = 200
-    ctx.bodyss = rows
+    if (rows.length > 0) {
+      ctx.body = rows
+    } else {
+      ctx.body = {
+        msg: 'No files found'
+      }
+    }
   }).catch(err => {
     ctx.status = 500
-    ctx.body = err
+    ctx.body = {
+      msg: 'Error: ' + err
+    }
   })
 })
 
@@ -73,7 +81,7 @@ router.get('/download/:secret', async ctx => {
     ctx.body = fs.createReadStream(path.join(__dirname, row.path))
   } else {
     ctx.status = 404
-    ctx.body = 'Not Found'
+    ctx.body = `${secret} not found`
   }
 })
 
