@@ -1,6 +1,8 @@
-const db = require('better-sqlite3')('data.db');
+const sqlite3 = require('sqlite3').verbose();
 
-db.prepare(`
+const db = new sqlite3.Database('data.db');
+
+db.run(`
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     secret TEXT NOT NULL UNIQUE,
@@ -8,15 +10,9 @@ CREATE TABLE IF NOT EXISTS files (
     size INTEGER NOT NULL,
     type TEXT NOT NULL,
     path TEXT NOT NULL,
+    public BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at DATETIME DEFAULT (datetime('now', '+1 day'))
 )`)
-  .run()
-
-const r = db.prepare(`
-SELECT * FROM files
-`).all()
-
-console.log('files:', r)
 
 exports.db = db;
