@@ -15,7 +15,9 @@ const { db } = require('./db');
 const { generatePasspharase, FILE_SEPARTOR } = require('./utils');
 
 const app = new Koa();
-const router = new Router();
+const router = new Router({
+  prefix: '/api'
+});
 
 // 上传文件存储路径，相对于当前的 /uploads 目录中
 const storagePath = path.join(__dirname, 'uploads');
