@@ -14,6 +14,8 @@ const path = require('path')
 const { db } = require('./db');
 const { generatePasspharase, FILE_SEPARTOR } = require('./utils');
 
+const tag = () => new Date().toLocaleString()
+
 const app = new Koa();
 const router = new Router({
   prefix: '/api'
@@ -69,7 +71,7 @@ router.get('/', async ctx => {
 router.get('/download/:secret', async ctx => {
   const { secret } = ctx.params
   const row = await new Promise((resolve, reject) => {
-    db.get('SELECT * FROM files WHERE secret = ?', secret, (err, row) => {
+    db.get('SELECT * FROM files WHERE CURRENT_TIMESTAMP < expired_at and secret = ?', secret, (err, row) => {
       if (err) {
         reject(err)
       } else {
@@ -78,12 +80,13 @@ router.get('/download/:secret', async ctx => {
     })
   })
   if (row) {
+    console.log(tag(), 'download', row.name, 'done')
     ctx.status = 200
     ctx.set('Content-Disposition', `attachment; filename=${row.name}`)
     ctx.body = fs.createReadStream(path.join(__dirname, row.path))
   } else {
     ctx.status = 404
-    ctx.body = `${secret} not found`
+    ctx.body = `口令 ${secret} 不存在或已过期`
   }
 })
 
@@ -108,7 +111,7 @@ router.post(
       path.relative(__dirname, ctx.file.path)
     )
 
-    console.log(new Date().toLocaleString(), 'upload', filename, 'done')
+    console.log(tag(), 'upload', filename, 'done')
 
     ctx.body = {
       status: 'ok',
