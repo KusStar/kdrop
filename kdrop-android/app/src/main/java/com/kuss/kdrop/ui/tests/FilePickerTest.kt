@@ -1,4 +1,4 @@
-package com.kuss.kdrop
+package com.kuss.kdrop.ui.tests
 
 import android.util.Log
 import android.widget.Toast
@@ -27,22 +27,27 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
+import com.kuss.kdrop.Crypto
+import com.kuss.kdrop.FilePicker
+import com.kuss.kdrop.SaveFile
+import com.kuss.kdrop.downloadFile
+import com.kuss.kdrop.formatBytes
+import com.kuss.kdrop.getFileName
+import com.kuss.kdrop.getHeaderFileName
+import com.kuss.kdrop.runOnIo
+import com.kuss.kdrop.runOnUi
+import com.kuss.kdrop.uploadFile
 import com.orhanobut.logger.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import okhttp3.*
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.lang.Exception
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SendAndReceiveTest(navController: NavController) {
-    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -64,63 +69,9 @@ fun SendAndReceiveTest(navController: NavController) {
                 .fillMaxSize()
                 .padding(it),
         ) {
-            var loading by remember { mutableStateOf(false) }
-            var showSaveFile by remember { mutableStateOf(false) }
-            var showFilePicker by remember { mutableStateOf(false) }
             var pickedFile by remember { mutableStateOf("") }
 
             var showOverlay by remember { mutableStateOf(false) }
-
-            FilePicker(showFilePicker) { uri ->
-                showFilePicker = false
-
-                if (uri != null) {
-                    val iss = context.contentResolver.openInputStream(uri)
-
-                    val name = getFileName(context.contentResolver, uri)
-
-                    if (iss != null) {
-                        loading = true
-                        CoroutineScope(Dispatchers.IO).launch {
-                            runCatching {
-                                val size = formatBytes(iss.available().toLong())
-                                pickedFile = "$name - $size"
-
-                                val enTmpFile = File.createTempFile("kdrop", ".encrypt")
-                                val enOutStream = FileOutputStream(enTmpFile)
-
-                                val hash = Crypto.encrypt(iss, enOutStream, "sec")
-
-                                Logger.d("encrypt done")
-
-                                Logger.d(
-                                    "${enTmpFile.name}, ${formatBytes(enTmpFile.length())}"
-                                )
-
-                                uploadFile(enTmpFile, name, hash) { e, response ->
-                                    if (e != null) {
-                                        e.printStackTrace()
-                                        // 清理临时文件
-                                        enTmpFile.canonicalFile.deleteOnExit()
-                                    } else if (response != null) {
-                                        response.body?.let { it1 -> Logger.d(it1.string()) }
-                                        // 清理临时文件
-                                        enTmpFile.canonicalFile.deleteOnExit()
-                                    }
-                                }
-
-                                loading = false
-                            }
-                        }
-                    }
-                }
-            }
-
-            Button(onClick = {
-                showFilePicker = true
-            }) {
-                Text(text = "Send a file")
-            }
 
             var anchor by remember {
                 mutableStateOf(Offset(0f, 0f))
@@ -177,107 +128,11 @@ fun SendAndReceiveTest(navController: NavController) {
                         }
                     })
 
-            var saveFileName by remember {
-                mutableStateOf("")
-            }
-            var tempFilePath by remember {
-                mutableStateOf("")
+            UploadFileComp {
+                pickedFile = it
             }
 
-            Button(onClick = {
-                downloadFile("leatherjackets-227") { err, res ->
-                    if (err != null) {
-                        err.printStackTrace()
-
-                    } else if (res?.body != null) {
-                        if (res.code != 200) {
-                            runOnUi {
-                                Toast.makeText(
-                                    context,
-                                    "出错了，${res.body!!.string()}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                            return@downloadFile
-                        }
-                        saveFileName = getHeaderFileName(res) ?: return@downloadFile
-                        Logger.d("download done")
-                        val tempFile = File.createTempFile("kdrop", ".decrypt")
-                        val tfs = FileOutputStream(tempFile)
-                        try {
-                            Crypto.decrypt(res.body!!.byteStream(), tfs, "sec")
-                            Logger.d("decrypt done ${tempFile.path}")
-
-                            tempFilePath = tempFile.path
-                            showSaveFile = true
-                        } catch (e: IOException) {
-                            e.printStackTrace()
-                            runOnUi {
-                                Toast.makeText(
-                                    context,
-                                    "解密失败，请确保密钥无误",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            runOnUi {
-                                Toast.makeText(
-                                    context,
-                                    "出错了，请稍后再试",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                }
-
-            }) {
-                Text(text = "Receive a file")
-            }
-
-            SaveFile(show = showSaveFile,
-                filename = saveFileName,
-                onFileSelected = { uri ->
-                    showSaveFile = false
-                    if (uri != null) {
-                        CoroutineScope(Dispatchers.IO).launch {
-                            runCatching {
-                                val os = context.contentResolver.openOutputStream(uri)
-                                val tempFile = File(tempFilePath)
-                                val tis = FileInputStream(tempFile)
-
-                                if (os == null) return@runCatching
-
-                                tis.use { input ->
-                                    os.use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-
-                                os.close()
-                                tis.close()
-                                runOnUi {
-                                    Toast.makeText(context, "下载并解密成功", Toast.LENGTH_SHORT)
-                                        .show()
-                                }
-                            }
-                        }
-                    }
-                })
-
-            if (loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.drawBehind {
-                        drawCircle(
-                            Color.Red,
-                            radius = size.width / 2 - 5.dp.toPx() / 2,
-                        )
-                    },
-                    color = Color.LightGray,
-                    strokeWidth = 5.dp
-                )
-            }
+            ReceiveFileComp()
 
             if (showOverlay) {
                 CustomAlertDialog(onDismiss = {
@@ -295,6 +150,195 @@ fun SendAndReceiveTest(navController: NavController) {
 
         }
     }
+
+}
+
+@Composable
+fun UploadFileComp(onPick: (file: String) -> Unit) {
+    val context = LocalContext.current
+    var loading by remember { mutableStateOf(false) }
+    var sendFilePickVisible by remember { mutableStateOf(false) }
+
+    Button(onClick = {
+        sendFilePickVisible = true
+    }) {
+        Text(text = "Send a file")
+    }
+
+    if (loading) {
+        CircularProgressIndicator(
+            modifier = Modifier.drawBehind {
+                drawCircle(
+                    Color.Red,
+                    radius = size.width / 2 - 5.dp.toPx() / 2,
+                )
+            },
+            color = Color.LightGray,
+            strokeWidth = 5.dp
+        )
+    }
+
+    FilePicker(sendFilePickVisible) { uri ->
+        sendFilePickVisible = false
+
+        if (uri != null) {
+            val iss = context.contentResolver.openInputStream(uri)
+
+            val name = getFileName(context.contentResolver, uri)
+
+            if (iss != null) {
+                loading = true
+                runOnIo {
+                    val size = formatBytes(iss.available().toLong())
+                    onPick("$name - $size")
+
+                    val enTmpFile = File.createTempFile("kdrop", ".encrypt")
+                    val enOutStream = FileOutputStream(enTmpFile)
+
+                    val hash = Crypto.encrypt(iss, enOutStream, "sec")
+
+                    Logger.d("encrypt done")
+
+                    Logger.d(
+                        "${enTmpFile.name}, ${formatBytes(enTmpFile.length())}"
+                    )
+
+                    uploadFile(enTmpFile, name, hash,
+                        onProgress = {
+
+                        }
+                    ) { e, response ->
+                        if (e != null) {
+                            e.printStackTrace()
+                            // 清理临时文件
+                            enTmpFile.canonicalFile.deleteOnExit()
+                            runOnUi {
+                                Toast.makeText(
+                                    context,
+                                    "上传失败，请检查网络问题",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else if (response != null) {
+                            response.body?.let { it1 -> Logger.d(it1.string()) }
+                            // 清理临时文件
+                            enTmpFile.canonicalFile.deleteOnExit()
+                            runOnUi {
+                                Toast.makeText(
+                                    context,
+                                    "上传成功",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+
+                    loading = false
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ReceiveFileComp() {
+    val context = LocalContext.current
+    var receiveFilePickerVisible by remember { mutableStateOf(false) }
+    var saveFileName by remember {
+        mutableStateOf("")
+    }
+    var tempFilePath by remember {
+        mutableStateOf("")
+    }
+
+    Button(onClick = {
+        downloadFile("coachy-141") { err, res ->
+            if (err != null) {
+                err.printStackTrace()
+                runOnUi {
+                    Toast.makeText(
+                        context,
+                        "网络错误：无法连接到服务器",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else if (res?.body != null) {
+                if (res.code != 200) {
+                    runOnUi {
+                        Toast.makeText(
+                            context,
+                            "出错了，${res.body!!.string()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return@downloadFile
+                }
+                saveFileName = getHeaderFileName(res) ?: return@downloadFile
+                Logger.d("download done")
+                val tempFile = File.createTempFile("kdrop", ".decrypt")
+                val tfs = FileOutputStream(tempFile)
+                try {
+                    Crypto.decrypt(res.body!!.byteStream(), tfs, "sec")
+                    Logger.d("decrypt done ${tempFile.path}")
+
+                    tempFilePath = tempFile.path
+                    receiveFilePickerVisible = true
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    runOnUi {
+                        Toast.makeText(
+                            context,
+                            "解密失败，请确保密钥无误",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    runOnUi {
+                        Toast.makeText(
+                            context,
+                            "出错了，请稍后再试",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+
+    }) {
+        Text(text = "Receive a file")
+    }
+
+    // 输入口令弹窗
+
+    SaveFile(show = receiveFilePickerVisible,
+        filename = saveFileName,
+        onFileSelected = { uri ->
+            receiveFilePickerVisible = false
+            if (uri != null) {
+                runOnIo {
+                    val os = context.contentResolver.openOutputStream(uri)
+                    val tempFile = File(tempFilePath)
+                    val tis = FileInputStream(tempFile)
+
+                    if (os == null) return@runOnIo
+
+                    tis.use { input ->
+                        os.use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    os.close()
+                    tis.close()
+                    runOnUi {
+                        Toast.makeText(context, "下载并解密成功", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            }
+        })
 
 }
 

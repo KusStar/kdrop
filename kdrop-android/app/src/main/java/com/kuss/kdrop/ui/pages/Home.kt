@@ -36,6 +36,23 @@ fun Home(navController: NavController) {
             }) {
                 Text(text = "Send And Receive Test")
             }
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Button(onClick = {
+                navController.navigate("biometric")
+            }) {
+                Text(text = "BiometricTest")
+            }
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Button(onClick = {
+                navController.navigate("db")
+            }) {
+                Text(text = "DbTest")
+            }
+
         }
     }
 
