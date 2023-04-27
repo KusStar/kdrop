@@ -85,6 +85,8 @@ router.get('/download/:secret', async ctx => {
     ctx.set('Content-Disposition', `attachment; filename=${row.name}`)
     ctx.body = fs.createReadStream(path.join(__dirname, row.path))
   } else {
+    console.error(tag(), 'download error', 'file not found')
+
     ctx.status = 404
     ctx.body = `口令 ${secret} 不存在或已过期`
   }
