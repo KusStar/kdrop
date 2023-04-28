@@ -1,4 +1,4 @@
-package com.kuss.kdrop
+package com.kuss.kdrop.ui.pages
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -7,6 +7,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.kuss.kdrop.ui.Routes
+import com.kuss.kdrop.ui.navigate
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +26,7 @@ fun Home(navController: NavController) {
         ) {
 
             Button(onClick = {
-                navController.navigate("crypto")
+                navController.navigate(Routes.CRYPTO_TEST)
             }) {
                 Text(text = "Encrypt/Decrypt Test")
             }
@@ -32,7 +34,7 @@ fun Home(navController: NavController) {
             Spacer(modifier = Modifier.size(8.dp))
 
             Button(onClick = {
-                navController.navigate("picker")
+                navController.navigate(Routes.PICKER_TEST)
             }) {
                 Text(text = "Send And Receive Test")
             }
@@ -40,7 +42,7 @@ fun Home(navController: NavController) {
             Spacer(modifier = Modifier.size(8.dp))
 
             Button(onClick = {
-                navController.navigate("biometric")
+                navController.navigate(Routes.BIOMETRIC_TEST)
             }) {
                 Text(text = "BiometricTest")
             }
@@ -48,11 +50,34 @@ fun Home(navController: NavController) {
             Spacer(modifier = Modifier.size(8.dp))
 
             Button(onClick = {
-                navController.navigate("db")
+                navController.navigate(Routes.DB_TEST)
             }) {
                 Text(text = "DbTest")
             }
 
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Button(onClick = {
+                navController.navigate(Routes.DROP_TEST)
+            }) {
+                Text(text = "DropTest")
+            }
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Button(onClick = {
+                navController.navigate(Routes.ABOUT)
+            }) {
+                Text(text = "About")
+            }
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            Button(onClick = {
+                navController.navigate(Routes.SETTINGS)
+            }) {
+                Text(text = "Settings")
+            }
         }
     }
 

@@ -2,26 +2,42 @@ package com.kuss.kdrop.ui
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kuss.kdrop.BuildConfig
-import com.kuss.kdrop.CryptoTest
-import com.kuss.kdrop.Home
+import com.kuss.kdrop.ui.pages.About
+import com.kuss.kdrop.ui.pages.Home
+import com.kuss.kdrop.ui.pages.Settings
 import com.kuss.kdrop.ui.tests.BiometricTest
+import com.kuss.kdrop.ui.tests.CryptoTest
 import com.kuss.kdrop.ui.tests.DbTest
+import com.kuss.kdrop.ui.tests.DropTest
 import com.kuss.kdrop.ui.tests.SendAndReceiveTest
+
+enum class Routes {
+    HOME,
+    PICKER_TEST,
+    CRYPTO_TEST,
+    BIOMETRIC_TEST,
+    DB_TEST,
+    DROP_TEST,
+    ABOUT,
+    SETTINGS
+}
 
 @Composable
 fun Router() {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") { Home(navController) }
+    NavHost(navController = navController, startDestination = Routes.HOME.name) {
+        composable(Routes.HOME) { Home(navController) }
         if (BuildConfig.DEBUG) {
-            composable("picker") { SendAndReceiveTest(navController) }
-            composable("crypto") { CryptoTest(navController) }
-            composable("biometric") { BiometricTest(navController) }
-            composable("db") { DbTest(navController) }
+            composable(Routes.PICKER_TEST) { SendAndReceiveTest(navController) }
+            composable(Routes.CRYPTO_TEST) { CryptoTest(navController) }
+            composable(Routes.BIOMETRIC_TEST) { BiometricTest(navController) }
+            composable(Routes.DB_TEST) { DbTest(navController) }
+            composable(Routes.DROP_TEST) { DropTest(navController) }
+            composable(Routes.ABOUT) { About(navController) }
+            composable(Routes.SETTINGS) { Settings(navController) }
         }
     }
 }
