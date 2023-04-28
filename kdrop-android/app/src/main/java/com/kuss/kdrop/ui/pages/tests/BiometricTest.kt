@@ -1,4 +1,4 @@
-package com.kuss.kdrop.ui.tests
+package com.kuss.kdrop.ui.pages.tests
 
 import android.content.Context
 import androidx.biometric.BiometricManager

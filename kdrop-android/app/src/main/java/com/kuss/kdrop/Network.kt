@@ -18,6 +18,8 @@ import okio.Sink
 import okio.buffer
 import java.io.File
 import java.io.IOException
+import java.net.URLDecoder
+import java.net.URLEncoder
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
@@ -35,11 +37,12 @@ fun uploadFile(
     onProgress: (progress: Double) -> Unit,
     onResult: (e: Exception?, res: Response?) -> Unit,
 ) {
+    val fileName = URLEncoder.encode("$checksum$Separator$filename", "UTF-8")
     val requestBody: RequestBody = MultipartBody.Builder()
         .setType(MultipartBody.FORM)
         .addFormDataPart(
             "file",
-            "$checksum$Separator$filename",
+            fileName,
             tempFile
                 .asRequestBody("multipart/form-data".toMediaTypeOrNull())
         )
@@ -66,6 +69,23 @@ fun uploadFile(
         }
     })
 }
+
+data class UploadResponse(
+    val status: String,
+    val msg: String,
+    val data: UploadResData
+)
+
+data class UploadResData(
+    val file: UploadResFile,
+    val secret: String
+)
+
+data class UploadResFile(
+    val name: String,
+    val size: Int,
+    val type: String
+)
 
 fun downloadFile(
     secret: String,
@@ -138,7 +158,7 @@ fun getHeaderFileName(response: Response): String? {
         if (strings.size > 1) {
             dispositionHeader = strings[1].replace("filename=", "")
             dispositionHeader = dispositionHeader.replace("\"", "")
-            return dispositionHeader
+            return URLDecoder.decode(dispositionHeader, "UTF-8")
         }
         return ""
     }

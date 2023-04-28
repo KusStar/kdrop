@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.kuss.kdrop.ui.SwitchWithLabel
+import com.kuss.kdrop.ui.conditional
 import kotlin.math.roundToInt
 
 // 定义一个悬浮的工具窗口

@@ -1,4 +1,4 @@
-package com.kuss.kdrop
+package com.kuss.kdrop.ui.pages.tests
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +13,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.kuss.kdrop.Crypto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

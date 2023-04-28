@@ -7,11 +7,11 @@ import com.kuss.kdrop.BuildConfig
 import com.kuss.kdrop.ui.pages.About
 import com.kuss.kdrop.ui.pages.Home
 import com.kuss.kdrop.ui.pages.Settings
-import com.kuss.kdrop.ui.tests.BiometricTest
-import com.kuss.kdrop.ui.tests.CryptoTest
-import com.kuss.kdrop.ui.tests.DbTest
-import com.kuss.kdrop.ui.tests.DropTest
-import com.kuss.kdrop.ui.tests.SendAndReceiveTest
+import com.kuss.kdrop.ui.pages.tests.BiometricTest
+import com.kuss.kdrop.ui.pages.tests.CryptoTest
+import com.kuss.kdrop.ui.pages.tests.DbTest
+import com.kuss.kdrop.ui.pages.tests.DropTest
+import com.kuss.kdrop.ui.pages.tests.SendAndReceiveTest
 
 enum class Routes {
     HOME,

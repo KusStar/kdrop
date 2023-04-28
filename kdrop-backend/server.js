@@ -31,7 +31,7 @@ if (!fs.existsSync(storagePath)) {
 const diskStorage = multer.diskStorage({
   destination: storagePath,
   filename: (req, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, decodeURIComponent(file.originalname));
   }
 })
 
@@ -82,7 +82,7 @@ router.get('/download/:secret', async ctx => {
   if (row) {
     console.log(tag(), 'download', row.name, 'done')
     ctx.status = 200
-    ctx.set('Content-Disposition', `attachment; filename=${row.name}`)
+    ctx.set('Content-Disposition', `attachment; filename=${encodeURIComponent(row.name)}`)
     ctx.body = fs.createReadStream(path.join(__dirname, row.path))
   } else {
     console.error(tag(), 'download error', 'file not found')
@@ -99,7 +99,7 @@ router.post(
   ctx => {
     const secret = generatePasspharase()
     const file = ctx.file
-    const filename = file.originalname.split(FILE_SEPARTOR)[1];
+    const filename = decodeURIComponent(file.originalname).split(FILE_SEPARTOR)[1];
 
     // 数据库插入记录
     db.prepare(`
@@ -120,7 +120,7 @@ router.post(
       msg: `upload ${ctx.file.filename} done`,
       data: {
         file: {
-          name: ctx.file.originalname,
+          name: filename,
           size: ctx.file.size,
           type: ctx.file.mimetype,
         },

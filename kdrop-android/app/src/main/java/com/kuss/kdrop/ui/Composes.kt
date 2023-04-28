@@ -1,4 +1,4 @@
-package com.kuss.kdrop
+package com.kuss.kdrop.ui
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult

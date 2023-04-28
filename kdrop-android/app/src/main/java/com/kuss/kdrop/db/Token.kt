@@ -7,19 +7,18 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 
-@Entity(tableName = "users")
-data class User(
+@Entity(tableName = "tokens")
+data class Token(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String,
-    val age: Int
+    val token: String,
 )
 
 @Dao
-interface UserDao {
-    @Query("SELECT * FROM users")
-    fun getAll(): List<User>
+interface TokenDao {
+    @Query("SELECT * FROM tokens")
+    fun getAll(): List<Token>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(user: User)
+    fun insert(user: Token)
 }

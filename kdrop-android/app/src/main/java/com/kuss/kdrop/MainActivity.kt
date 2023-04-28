@@ -31,7 +31,8 @@ class MainActivity : FragmentActivity() {
         setContent {
             KdropTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     Router()
                     if (BuildConfig.DEBUG) {

@@ -3,7 +3,7 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">kdrop.uselessthing.top</domain>
+        <domain includeSubdomains="true">20.205.0.103:3000</domain>
     </domain-config>
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>

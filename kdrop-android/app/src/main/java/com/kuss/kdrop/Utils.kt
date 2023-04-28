@@ -1,6 +1,8 @@
 package com.kuss.kdrop
 
 import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import kotlinx.coroutines.CoroutineScope
@@ -23,13 +25,17 @@ fun formatBytes(input: Long): String {
     return String.format("%.${if (final >= 100) 0 else 2}f %cB", final, ci.current())
 }
 
-fun getFileName(cr: ContentResolver, uri: Uri): String {
-    val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
+
+fun getFileName(cr: ContentResolver, uri: Uri, withSize:  Boolean): String {
+    val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.SIZE)
     var name = ""
 
     cr.query(uri, projection, null, null, null)?.use { metaCursor ->
         if (metaCursor.moveToFirst()) {
             name = metaCursor.getString(0).toString()
+            if (withSize) {
+                name += ", ${formatBytes(metaCursor.getString(1).toLong())}"
+            }
         }
     }
 
@@ -51,4 +57,9 @@ fun runOnIo(cb: () -> Unit) {
             cb()
         }
     }
+}
+
+fun openUrl(url: String, context: Context) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    context.startActivity(intent)
 }
