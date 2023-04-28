@@ -1,7 +1,7 @@
 package com.kuss.kdrop
 
 object Globals {
-    private const val remoteUrl = "https://kdrop.uselessthing.top/api"
+    const val remoteUrl = "http://20.205.0.103:3000/api"
     private const val localUrl = "http://localhost:3000/api"
 
     var apiUrl: String
