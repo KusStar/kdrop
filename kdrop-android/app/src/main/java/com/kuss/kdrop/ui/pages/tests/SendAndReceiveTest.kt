@@ -46,7 +46,7 @@ fun SendAndReceiveTest(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FilePickerTest") },
+                title = { Text("文件加密上传，下载解密测试") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
@@ -65,6 +65,7 @@ fun SendAndReceiveTest(navController: NavController) {
                 .padding(it),
         ) {
             UploadFileComp()
+            Spacer(modifier = Modifier.height(16.dp))
             ReceiveFileComp()
         }
     }
@@ -105,7 +106,7 @@ fun UploadFileComp() {
     Button(onClick = {
         openBottomSheet = true
     }) {
-        Text(text = "Send a file")
+        Text(text = "加密文件并上传")
     }
 
     LaunchedEffect(bottomSheetState.isVisible) {
@@ -126,15 +127,15 @@ fun UploadFileComp() {
         loading = true
 
         val uri = fileUri.toUri()
-        val name = getFileName(context.contentResolver, uri, false)
 
+        val name = getFileName(context.contentResolver, uri, false)
         val iss = context.contentResolver.openInputStream(uri)
 
         if (iss != null) {
             runOnIo {
                 progressText = "加密中……"
                 progress = -1f
-                val enTmpFile = File.createTempFile("kdrop", ".encrypt")
+                val enTmpFile = File.createTempFile("kdrop", ".encrypt", File(context.filesDir.absolutePath))
                 val enOutStream = FileOutputStream(enTmpFile)
 
                 val hash = Crypto.encrypt(iss, enOutStream, secret)
@@ -156,7 +157,7 @@ fun UploadFileComp() {
                     if (e != null) {
                         e.printStackTrace()
                         // 清理临时文件
-                        enTmpFile.canonicalFile.deleteOnExit()
+                        enTmpFile.delete()
                         progressText = "上传失败，请检查网络问题"
                         runOnUi {
                             Toast.makeText(
@@ -170,9 +171,9 @@ fun UploadFileComp() {
                             val gson = Gson()
                             val data = gson.fromJson(it, UploadResponse::class.java)
                             token = data.data.secret
+                            enTmpFile.delete()
                         }
                         // 清理临时文件
-                        enTmpFile.canonicalFile.deleteOnExit()
                         progressText = "上传成功！"
                         runOnUi {
                             Toast.makeText(
@@ -334,12 +335,21 @@ fun UploadFileComp() {
         sendFilePickVisible = false
 
         if (uri != null) {
-
-            fileUri = uri.toString()
-
-            val name = getFileName(context.contentResolver, uri, true)
-
-            pickedFile = name
+            try {
+                context.contentResolver.openInputStream(uri)?.close()
+                fileUri = uri.toString()
+                val name = getFileName(context.contentResolver, uri, true)
+                pickedFile = name
+            } catch (e: IOException) {
+                e.printStackTrace()
+                runOnUi {
+                    Toast.makeText(
+                        context,
+                        "文件不存在",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
     }
 }
@@ -412,7 +422,7 @@ fun ReceiveFileComp() {
                 }
                 saveFileName = getHeaderFileName(res) ?: return@downloadFile
                 Logger.d("download done")
-                val tempFile = File.createTempFile("kdrop", ".decrypt")
+                val tempFile = File.createTempFile("kdrop", ".decrypt", File(context.filesDir.absolutePath))
                 val tfs = FileOutputStream(tempFile)
                 try {
                     Crypto.decrypt(res.body!!.byteStream(), tfs, secret)
@@ -448,7 +458,7 @@ fun ReceiveFileComp() {
     Button(onClick = {
         openBottomSheet = true
     }) {
-        Text(text = "Receive a file")
+        Text(text = "下载文件并解密")
     }
 
     if (openBottomSheet) {

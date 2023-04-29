@@ -28,7 +28,7 @@ fun Home(navController: NavController) {
             Button(onClick = {
                 navController.navigate(Routes.CRYPTO_TEST)
             }) {
-                Text(text = "Encrypt/Decrypt Test")
+                Text(text = "加密、解密测试")
             }
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -36,7 +36,7 @@ fun Home(navController: NavController) {
             Button(onClick = {
                 navController.navigate(Routes.PICKER_TEST)
             }) {
-                Text(text = "Send And Receive Test")
+                Text(text = "文件加密上传，下载解密测试")
             }
 
             Spacer(modifier = Modifier.size(8.dp))

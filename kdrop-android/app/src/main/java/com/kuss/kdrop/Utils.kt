@@ -27,7 +27,12 @@ fun formatBytes(input: Long): String {
 
 
 fun getFileName(cr: ContentResolver, uri: Uri, withSize:  Boolean): String {
-    val projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns.SIZE)
+    var projection = arrayOf(MediaStore.MediaColumns.DISPLAY_NAME)
+
+    if (withSize) {
+        projection = projection.plus(MediaStore.MediaColumns.SIZE)
+    }
+
     var name = ""
 
     cr.query(uri, projection, null, null, null)?.use { metaCursor ->

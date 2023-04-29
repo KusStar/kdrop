@@ -21,7 +21,7 @@ fun CryptoTest(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CryptoTest") },
+                title = { Text("加密、解密测试") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
@@ -33,7 +33,6 @@ fun CryptoTest(navController: NavController) {
         },
     ) { appIt ->
         Column(
-//            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
@@ -44,7 +43,7 @@ fun CryptoTest(navController: NavController) {
 
             var text by remember { mutableStateOf("") }
             var secret by remember { mutableStateOf(ByteArray(0)) }
-            var key by remember { mutableStateOf(java.util.UUID.randomUUID().toString().take(16)) }
+            var key by remember { mutableStateOf("") }
             var log by remember {
                 mutableStateOf("")
             }
@@ -54,26 +53,37 @@ fun CryptoTest(navController: NavController) {
                 focusRequester.requestFocus()
             }
 
-            TextField(value = text, onValueChange = {
+            Spacer(modifier = Modifier.height(256.dp))
+            OutlinedTextField(
+                label =  {
+                    Text("原文")
+                },
+                value = text, onValueChange = {
                 text = it
             }, modifier = Modifier.focusRequester(focusRequester))
-
-            TextField(value = key, onValueChange = {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                label =  {
+                    Text("密钥")
+                },
+                value = key, onValueChange = {
                 key = it
             })
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             Button(onClick = {
                 secret = Crypto.encrypt(text.encodeToByteArray(), key)
-                log += "Encrypt: \n$text -> $secret\n\n"
+                log += "加密过程: \n$text -> $secret\n\n"
             }) {
-                Text(text = "Encrypt")
+                Text(text = "加密")
             }
 
             Button(onClick = {
                 val t = Crypto.decrypt(secret, key)?.decodeToString()
-                log += "Decrypt: \n$secret -> $t\n\n"
+                log += "解密得到: \n$secret -> $t\n\n"
             }) {
-                Text(text = "Decrypt")
+                Text(text = "解密")
             }
 
             Text(

@@ -1,7 +1,5 @@
 package com.kuss.kdrop
 
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -86,21 +84,6 @@ class Crypto {
             }
             fos.close()
             cos.close()
-        }
-
-        fun checksum(data: InputStream): String {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val buffer = ByteArray(1024)
-            var read = data.read(buffer, 0, 1024)
-            while (read > -1) {
-                digest.update(buffer, 0, read)
-                read = data.read(buffer, 0, 1024)
-            }
-            return digest.digest().fold("") { str, it -> str + "%02x".format(it) }
-        }
-
-        fun osToIs(data: ByteArrayOutputStream): ByteArrayInputStream {
-            return ByteArrayInputStream(data.toByteArray())
         }
     }
 }
