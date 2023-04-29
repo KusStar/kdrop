@@ -23,6 +23,7 @@ const Home: NextPage = () => {
   }
 
   const onDownload = () => {
+    console.log('download')
   }
 
   return (
@@ -42,6 +43,7 @@ const Home: NextPage = () => {
           </button>
           <button
             className="bg-[#15162c] text-[#a7f974] px-4 py-2 rounded-md shadow-md hover:bg-[#a7f974] hover:text-[#15162c] transition duration-300 ease-in-out"
+            onClick={onDownload}
           >
             Download
           </button>
