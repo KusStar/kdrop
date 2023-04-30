@@ -1,9 +1,14 @@
+const FILE_SEPARTOR = '-kdrop-'
+
 export async function encryptFile(file: File, key: string) {
   const uint8Array = await readFile(file);
   const encryptedData = await encrypt(uint8Array, key);
-  const encryptedFile = new File([encryptedData], file.name, {
+  const hash = await calculateFileHash(file);
+  const name = `${hash}${FILE_SEPARTOR}${file.name}`
+  const encryptedFile = new File([encryptedData], encodeURIComponent(name), {
     type: file.type,
   });
+  
   return encryptedFile;
 }
 
@@ -69,4 +74,16 @@ export async function decrypt(data: Uint8Array, key: string) {
     data
   );
   return new Uint8Array(decryptedData);
+}
+
+async function calculateFileHash(file: File) {
+  const uint8Array = await readFile(file);
+
+  const hashBuffer = await window.crypto.subtle.digest("SHA-256", uint8Array);
+
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join(""); // convert bytes to hex string
+  return hashHex.toUpperCase();
 }

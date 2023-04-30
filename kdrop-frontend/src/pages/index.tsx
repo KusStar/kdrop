@@ -16,14 +16,57 @@ const Home: NextPage = () => {
     const file = e.target.files?.[0]
     if (!file) return
     console.log('original', file)
-    const encryptedFile = await encryptFile(file, "secret")
-    console.log('encrypted', encryptedFile)
-    const decryptedFile = await decryptFile(encryptedFile, "secret")
-    console.log('decrypted', decryptedFile)
+
+    const secret = prompt('Enter secret key')
+
+    if (!secret) return
+
+    const encryptedFile = await encryptFile(file, secret)
+
+    const form = new FormData()
+    form.append('file', encryptedFile)
+
+    const res = await fetch('http://localhost:3000/api/upload', {
+      method: 'POST',
+      body: form
+    })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const data = await res.json()
+    console.log(data)
   }
 
-  const onDownload = () => {
-    console.log('download')
+  const onDownload = async () => {
+    const token = prompt('Enter download token')
+
+    if (!token) return
+
+    const res = await fetch(`http://localhost:3000/api/download/${token}`)
+
+    const contentDisposition = res.headers.get('content-disposition')
+
+    if (contentDisposition) {
+      let filename = contentDisposition.split(';')
+        .find(n => n.includes('filename='))
+        ?.replace('filename=', '')
+        .trim() || 'file'
+
+      filename = decodeURI(filename)
+
+      const blob = await res.blob()
+      const file = new File([blob], filename, { type: blob.type });
+
+      const secret = prompt('Enter secret key')
+
+      const decryptedFile = await decryptFile(file, secret || 'secret')
+
+      const url = window.URL.createObjectURL(decryptedFile)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    }
   }
 
   return (
