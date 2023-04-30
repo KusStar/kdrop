@@ -5,6 +5,8 @@ import Head from "next/head";
 import Image from "next/image";
 import { useRef } from "react";
 
+const API_URL = process.env.NODE_ENV === 'production' ? 'http://20.205.0.103/api' : 'http://localhost:3000/api'
+
 const Home: NextPage = () => {
   const uploadRef = useRef<HTMLInputElement>(null)
 
@@ -26,7 +28,7 @@ const Home: NextPage = () => {
     const form = new FormData()
     form.append('file', encryptedFile)
 
-    const res = await fetch('http://localhost:3000/api/upload', {
+    const res = await fetch(`${API_URL}/upload`, {
       method: 'POST',
       body: form
     })
@@ -40,7 +42,7 @@ const Home: NextPage = () => {
 
     if (!token) return
 
-    const res = await fetch(`http://localhost:3000/api/download/${token}`)
+    const res = await fetch(`${API_URL}/download/${token}`)
 
     const contentDisposition = res.headers.get('content-disposition')
 
