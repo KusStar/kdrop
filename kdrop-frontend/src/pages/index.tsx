@@ -5,7 +5,7 @@ import Head from "next/head";
 import Image from "next/image";
 import { useRef } from "react";
 
-const API_URL = process.env.NODE_ENV === 'production' ? 'http://20.205.0.103/api' : 'http://localhost:3000/api'
+const API_URL = process.env.NODE_ENV === 'production' ? 'http://20.205.0.103:3000/api' : 'http://localhost:3000/api'
 
 const Home: NextPage = () => {
   const uploadRef = useRef<HTMLInputElement>(null)
