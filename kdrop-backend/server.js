@@ -10,6 +10,7 @@ const Router = require('@koa/router');
 const multer = require('@koa/multer');
 const fs = require('fs')
 const path = require('path')
+const cors = require('@koa/cors');
 
 const { db } = require('./db');
 const { generatePasspharase, FILE_SEPARTOR } = require('./utils');
@@ -17,6 +18,13 @@ const { generatePasspharase, FILE_SEPARTOR } = require('./utils');
 const tag = () => new Date().toLocaleString()
 
 const app = new Koa();
+
+app.use(cors({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+}));
+
 const router = new Router({
   prefix: '/api'
 });
@@ -82,6 +90,7 @@ router.get('/download/:secret', async ctx => {
   if (row) {
     console.log(tag(), 'download', row.name, 'done')
     ctx.status = 200
+    ctx.set('Access-Control-Expose-Headers', 'Content-Disposition')
     ctx.set('Content-Disposition', `attachment; filename=${encodeURIComponent(row.name)}`)
     ctx.body = fs.createReadStream(path.join(__dirname, row.path))
   } else {
@@ -100,6 +109,14 @@ router.post(
     const secret = generatePasspharase()
     const file = ctx.file
     const filename = decodeURIComponent(file.originalname).split(FILE_SEPARTOR)[1];
+
+    if (!filename) {
+      ctx.body = {
+        status: 'error',
+        msg: `${file.originalname} is not a valid encrypted file}`,
+      };
+      return 
+    }
 
     // 数据库插入记录
     db.prepare(`
