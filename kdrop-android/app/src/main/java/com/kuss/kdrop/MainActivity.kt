@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
+import androidx.navigation.compose.rememberNavController
 import com.kuss.kdrop.ui.Router
 import com.kuss.kdrop.ui.theme.KdropTheme
 import com.orhanobut.logger.AndroidLogAdapter
@@ -28,15 +29,18 @@ class MainActivity : FragmentActivity() {
 
         Logger.addLogAdapter(AndroidLogAdapter(formatStrategy))
 
+
         setContent {
             KdropTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Router()
+                    val navController = rememberNavController()
+
+                    Router(navController)
                     if (BuildConfig.DEBUG) {
-                        FloatingWindow()
+                        FloatingWindow(navController)
                     }
                 }
             }

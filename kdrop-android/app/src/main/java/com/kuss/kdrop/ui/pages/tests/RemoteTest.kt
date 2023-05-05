@@ -1,6 +1,5 @@
 package com.kuss.kdrop.ui.pages.tests
 
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
@@ -24,9 +23,11 @@ import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.kuss.kdrop.Crypto
 import com.kuss.kdrop.UploadResponse
+import com.kuss.kdrop.copyToClipboard
 import com.kuss.kdrop.formatBytes
 import com.kuss.kdrop.getFileName
 import com.kuss.kdrop.getHeaderFileName
+import com.kuss.kdrop.makeTempFile
 import com.kuss.kdrop.runOnIo
 import com.kuss.kdrop.runOnUi
 import com.kuss.kdrop.ui.FilePicker
@@ -42,11 +43,11 @@ import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SendAndReceiveTest(navController: NavController) {
+fun RemoteTest(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("文件加密上传，下载解密测试") },
+                title = { Text("远程传输测试") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
@@ -135,7 +136,7 @@ fun UploadFileComp() {
             runOnIo {
                 progressText = "加密中……"
                 progress = -1f
-                val enTmpFile = File.createTempFile("kdrop", ".encrypt", File(context.filesDir.absolutePath))
+                val enTmpFile = makeTempFile(context,".encrypt")
                 val enOutStream = FileOutputStream(enTmpFile)
 
                 val hash = Crypto.encrypt(iss, enOutStream, secret)
@@ -194,17 +195,6 @@ fun UploadFileComp() {
             sheetState = bottomSheetState,
         ) {
             if (token.isNotEmpty()) {
-                fun copyToClipboard(content: String) {
-                    val clipboard =
-                        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("kdrop-copied", content)
-                    clipboard.setPrimaryClip(clip)
-                    Toast.makeText(
-                        context,
-                        "已复制 $content 到剪贴板",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
 
                 Column(
                     Modifier.fillMaxWidth(),
@@ -218,7 +208,7 @@ fun UploadFileComp() {
                     )
                     AssistChip(
                         onClick = {
-                            copyToClipboard("$token@$secret")
+                            copyToClipboard(context, "$token@$secret")
                         },
                         label = {
                             Text(
@@ -422,7 +412,7 @@ fun ReceiveFileComp() {
                 }
                 saveFileName = getHeaderFileName(res) ?: return@downloadFile
                 Logger.d("download done")
-                val tempFile = File.createTempFile("kdrop", ".decrypt", File(context.filesDir.absolutePath))
+                val tempFile = makeTempFile(context, ".decrypt")
                 val tfs = FileOutputStream(tempFile)
                 try {
                     Crypto.decrypt(res.body!!.byteStream(), tfs, secret)

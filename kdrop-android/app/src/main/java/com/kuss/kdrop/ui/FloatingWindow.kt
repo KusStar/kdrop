@@ -13,8 +13,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,13 +27,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.kuss.kdrop.ui.Routes
 import com.kuss.kdrop.ui.SwitchWithLabel
 import com.kuss.kdrop.ui.conditional
+import com.kuss.kdrop.ui.navigate
 import kotlin.math.roundToInt
 
 // 定义一个悬浮的工具窗口
 @Composable
-fun FloatingWindow() {
+fun FloatingWindow(navController: NavController) {
     //悬浮窗的 UI 样式
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         var hidden by remember {
@@ -91,6 +96,12 @@ fun FloatingWindow() {
 
                         Globals.apiUrl = Globals.getBackendUrl(checked)
                     })
+
+                    Button(onClick = {
+                        navController.navigate(Routes.TEST_ENTRIES)
+                    }) {
+                        Text(text = "测试页面入口")
+                    }
                 }
             }
         }

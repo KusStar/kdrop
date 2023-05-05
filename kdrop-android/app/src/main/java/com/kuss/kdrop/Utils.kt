@@ -1,13 +1,22 @@
 package com.kuss.kdrop
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+import java.math.BigInteger
+import java.net.InetAddress
+import java.net.UnknownHostException
+import java.nio.ByteOrder
 import java.text.StringCharacterIterator
 
 
@@ -67,4 +76,41 @@ fun runOnIo(cb: () -> Unit) {
 fun openUrl(url: String, context: Context) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
     context.startActivity(intent)
+}
+
+fun getLocalIp(ctx: Context): String {
+    val wifiManager = ctx.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+    var ipAddress = wifiManager.connectionInfo.ipAddress
+
+    if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+        ipAddress = Integer.reverseBytes(ipAddress)
+    }
+
+    val ipByteArray = BigInteger.valueOf(ipAddress.toLong()).toByteArray()
+
+    val ipAddressString: String? = try {
+        InetAddress.getByAddress(ipByteArray).hostAddress
+    } catch (ex: UnknownHostException) {
+        Log.e("WIFIIP", "Unable to get host address.")
+        null
+    }
+
+    return ipAddressString!!
+}
+
+fun copyToClipboard(context: Context, content: String) {
+    val clipboard =
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clip = ClipData.newPlainText("kdrop-copied", content)
+    clipboard.setPrimaryClip(clip)
+    Toast.makeText(
+        context,
+        "已复制 $content 到剪贴板",
+        Toast.LENGTH_SHORT
+    ).show()
+}
+
+
+fun makeTempFile(context: Context, suffix: String = ""): File {
+    return File.createTempFile("kdrop", suffix, File(context.filesDir.absolutePath))
 }

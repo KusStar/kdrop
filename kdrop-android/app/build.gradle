@@ -54,6 +54,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'com.github.alorma:compose-settings-ui-m3:0.26.0'
     implementation "com.google.accompanist:accompanist-insets:0.22.0-rc"
+    implementation 'com.github.tejmagar:AndroidNetworkTools:1.0.2alpha'
     // db room
     implementation "androidx.room:room-runtime:2.5.1"
 
