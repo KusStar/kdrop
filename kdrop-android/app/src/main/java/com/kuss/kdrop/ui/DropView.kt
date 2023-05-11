@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,7 +22,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.kuss.kdrop.R
-import com.kuss.kdrop.ui.theme.Green80
 import kotlin.math.min
 
 @Composable
@@ -57,6 +57,7 @@ fun DropView() {
                 .size(80.dp)
                 .offset(0.dp, 390.dp)
         )
+        val color = MaterialTheme.colorScheme.primary
 
         Canvas(modifier = Modifier.fillMaxSize()) {
             val circleCount = 8
@@ -68,7 +69,6 @@ fun DropView() {
             val gap = diameter / 2
 
             for (i in 1..circleCount) {
-                val color = Green80
 
                 drawCircle(
                     color = color,

@@ -114,3 +114,9 @@ fun copyToClipboard(context: Context, content: String) {
 fun makeTempFile(context: Context, suffix: String = ""): File {
     return File.createTempFile("kdrop", suffix, File(context.filesDir.absolutePath))
 }
+
+fun makeCacheFile(context: Context, name: String): File {
+    val file = File(context.cacheDir, name)
+    file.createNewFile()
+    return file
+}

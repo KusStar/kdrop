@@ -1,4 +1,4 @@
-package com.kuss.kdrop.ui.pages.tests
+package com.kuss.kdrop.ui.pages
 
 import android.content.ClipboardManager
 import android.content.Context
@@ -43,11 +43,11 @@ import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RemoteTest(navController: NavController) {
+fun ServerTransfer(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("远程传输测试") },
+                title = { Text("C/S 文件服务器传输测试") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()

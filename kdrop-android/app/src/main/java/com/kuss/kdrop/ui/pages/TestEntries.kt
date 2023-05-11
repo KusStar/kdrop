@@ -36,7 +36,7 @@ fun TestEntries(navController: NavController) {
             Button(onClick = {
                 navController.navigate(Routes.LOCAL_TEST)
             }) {
-                Text(text = "本地传输测试")
+                Text(text = "P2P 传输测试")
             }
 
             Spacer(modifier = Modifier.size(8.dp))
@@ -44,7 +44,7 @@ fun TestEntries(navController: NavController) {
             Button(onClick = {
                 navController.navigate(Routes.REMOTE_TEST)
             }) {
-                Text(text = "远程传输测试")
+                Text(text = "C/S 文件服务器传输测试")
             }
 
             Spacer(modifier = Modifier.size(8.dp))

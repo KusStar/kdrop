@@ -1,4 +1,4 @@
-package com.kuss.kdrop.ui.pages.tests
+package com.kuss.kdrop.ui.pages
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -19,6 +21,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -32,7 +36,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -47,6 +55,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -58,6 +67,7 @@ import com.kuss.kdrop.copyToClipboard
 import com.kuss.kdrop.formatBytes
 import com.kuss.kdrop.getFileName
 import com.kuss.kdrop.getLocalIp
+import com.kuss.kdrop.makeCacheFile
 import com.kuss.kdrop.makeTempFile
 import com.kuss.kdrop.runOnIo
 import com.kuss.kdrop.runOnUi
@@ -77,7 +87,7 @@ import java.net.Socket
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocalTest(navController: NavController) {
+fun P2PTransfer(navController: NavController) {
     val context = LocalContext.current
 
     val serverSocket = remember {
@@ -103,7 +113,14 @@ fun LocalTest(navController: NavController) {
                     val inputStream = socket.inputStream
                     val buffer = ByteArray(1024)
 
-                    val file = makeTempFile(context, ".encrypt")
+                    // 读取文件名长度和文件名
+                    val nameLength = inputStream.read()
+                    val fileNameBytes = ByteArray(nameLength)
+                    inputStream.read(fileNameBytes, 0, nameLength)
+                    val fileName = fileNameBytes.decodeToString()
+
+                    // 读取文件内容并写入文件
+                    val file = makeCacheFile(context, fileName)
                     val fileOutputStream = FileOutputStream(file)
 
                     inputStream.use { input ->
@@ -153,10 +170,76 @@ fun LocalTest(navController: NavController) {
         }
     }
 
+
+    // 保存文件
+    var saveFilePickerVisible by remember { mutableStateOf(false) }
+    var saveFileName by remember { mutableStateOf("") }
+    var decryptFile by remember { mutableStateOf<File?>(null) }
+
+    fun decryptFile(file: File, secret: String) {
+        saveFileName = file.name
+        runOnIo {
+            val tempFile = makeTempFile(context, ".decrypt")
+            val tfs = FileOutputStream(tempFile)
+            try {
+                Crypto.decrypt(file.inputStream(), tfs, secret)
+                Logger.d("decrypt done ${tempFile.path}")
+
+                decryptFile = tempFile
+                saveFilePickerVisible = true
+            } catch (e: IOException) {
+                e.printStackTrace()
+                runOnUi {
+                    Toast.makeText(
+                        context,
+                        "解密失败，请确保密钥无误",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUi {
+                    Toast.makeText(
+                        context,
+                        "出错了，请稍后再试",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    SaveFile(show = saveFilePickerVisible,
+        filename = saveFileName,
+        onFileSelected = { uri ->
+            saveFilePickerVisible = false
+            if (uri != null && decryptFile != null) {
+                runOnIo {
+                    val os = context.contentResolver.openOutputStream(uri)
+                    val tis = FileInputStream(decryptFile)
+
+                    if (os == null) return@runOnIo
+
+                    tis.use { input ->
+                        os.use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    os.close()
+                    tis.close()
+                    runOnUi {
+                        Toast.makeText(context, "解密并保存成功", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            }
+        })
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("本地传输测试") },
+                title = { Text("P2P 传输测试") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
@@ -168,52 +251,150 @@ fun LocalTest(navController: NavController) {
         },
     ) { it ->
         Column(
-            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it),
         ) {
 
-            // 显示接收到的文件
-            if (receivedFiles.isNotEmpty()) {
-                LazyColumn {
-                    items(items = receivedFiles) { item ->
-                        OutlinedCard() {
-                            Text(item.path)
+            var tabIndex by remember { mutableStateOf(0) }
+            val titles = listOf("发送文件", "接收文件")
+            Column {
+                TabRow(selectedTabIndex = tabIndex) {
+                    titles.forEachIndexed { index, title ->
+                        Tab(
+                            selected = tabIndex == index,
+                            onClick = { tabIndex = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        )
+                    }
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(it),
+                ) {
+                    if (tabIndex == 0) {
+                        LocalUploadFileComp()
+                    } else if (tabIndex == 1) {
+                        if (myIp.isNotEmpty()) {
+                            Text(
+                                text = "本机的 IP 地址为：",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            AssistChip(
+                                onClick = {
+                                    copyToClipboard(context, myIp)
+                                },
+                                label = {
+                                    Text(
+                                        text = myIp,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Filled.ContentCopy,
+                                        contentDescription = "Localized description",
+                                        Modifier.size(AssistChipDefaults.IconSize)
+                                    )
+                                }
+                            )
+
+                        }
+                        var decryptSecret by remember {
+                            mutableStateOf("")
+                        }
+                        val decryptFile = remember {
+                            mutableStateOf<File?>(null)
+                        }
+                        // 显示接收到的文件
+                        if (receivedFiles.isNotEmpty()) {
+                            Text(
+                                text = "接收到的文件：",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            LazyColumn(
+                                Modifier.padding(16.dp),
+                            ) {
+                                items(items = receivedFiles) { item ->
+                                    OutlinedCard(
+                                        onClick = {
+                                            decryptFile.value = item
+                                        }
+                                    ) {
+                                        ListItem(headlineContent = {
+                                            Text(
+                                                "$item.encrypt, ${
+                                                    formatBytes(
+                                                        item.length()
+                                                    )
+                                                }"
+                                            )
+                                        },
+                                            leadingContent = {
+                                                Icon(
+                                                    Icons.Filled.Description,
+                                                    contentDescription = "Localized description",
+                                                )
+                                            })
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+
+                            if (decryptFile.value != null) {
+                                AlertDialog(
+                                    onDismissRequest = {
+                                        decryptFile.value = null
+                                    }) {
+                                    Surface(
+                                        modifier = Modifier
+                                            .wrapContentWidth()
+                                            .wrapContentHeight(),
+                                        shape = MaterialTheme.shapes.large,
+                                        tonalElevation = AlertDialogDefaults.TonalElevation
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            OutlinedTextField(
+                                                label = { Text(text = "解密密钥") },
+                                                value = decryptSecret,
+                                                onValueChange = {
+                                                    decryptSecret = it
+                                                })
+                                            Spacer(modifier = Modifier.height(24.dp))
+                                            TextButton(
+                                                onClick = {
+                                                    decryptFile(decryptFile.value!!, decryptSecret)
+                                                    decryptFile.value = null
+                                                },
+                                                modifier = Modifier.align(Alignment.End)
+                                            ) {
+                                                Text("解密并保存")
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "还没有接收到文件",
+                                style = MaterialTheme.typography.titleLarge
+                            )
                         }
                     }
                 }
-            }
-
-            if (myIp.isNotEmpty()) {
-                Text(
-                    text = "本机的 IP 地址为：",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                AssistChip(
-                    onClick = {
-                        copyToClipboard(context, myIp)
-                    },
-                    label = {
-                        Text(
-                            text = myIp,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Filled.ContentCopy,
-                            contentDescription = "Localized description",
-                            Modifier.size(AssistChipDefaults.IconSize)
-                        )
-                    }
-                )
-
-                Spacer(modifier = Modifier.size(16.dp))
-
-                LocalUploadFileComp()
             }
         }
     }
@@ -239,7 +420,7 @@ fun LocalUploadFileComp() {
         mutableStateOf("")
     }
 
-    fun sendToServerSocket(file: File) {
+    fun sendToServerSocket(originalName: String, file: File) {
         if (targetIp.isEmpty()) {
             Logger.e("targetIp is empty")
             return
@@ -249,12 +430,21 @@ fun LocalUploadFileComp() {
         scope.launch {
             withContext(Dispatchers.IO) {
                 val socket = Socket(targetIp, Globals.socketPort) // 连接到指定的服务器
-                val output = socket.getOutputStream()
+                val outputStream = socket.getOutputStream()
 
                 val fileInput = FileInputStream(file)
 
+                // 获取文件名
+                val fileNameBytes = originalName.encodeToByteArray()
+                val nameLength = fileNameBytes.size
+
+                // 发送文件名长度和文件名
+                outputStream.write(nameLength)
+                outputStream.write(fileNameBytes)
+
+                // 发送文件内容
                 val buffer = ByteArray(1024)
-                output.use { out ->
+                outputStream.use { out ->
                     fileInput.use { fi ->
                         while (true) {
                             val count = fi.read(buffer)
@@ -266,7 +456,6 @@ fun LocalUploadFileComp() {
                 }
 
                 socket.close() // 关闭 Socket 连接
-
             }
         }
     }
@@ -292,7 +481,7 @@ fun LocalUploadFileComp() {
                     "${enTmpFile.name}, ${formatBytes(enTmpFile.length())}"
                 )
 
-                sendToServerSocket(enTmpFile)
+                sendToServerSocket(name, enTmpFile)
             }
         }
     }
@@ -303,7 +492,9 @@ fun LocalUploadFileComp() {
             .padding(32.dp, 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Text(text = "发送给：", color = MaterialTheme.colorScheme.secondary)
         OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
             value = targetIp,
             onValueChange = {
                 targetIp = it
@@ -311,6 +502,7 @@ fun LocalUploadFileComp() {
             label = { Text("目标 IP 地址") }
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "选择发送的文件：", color = MaterialTheme.colorScheme.secondary)
         if (pickedFile.isNotEmpty()) {
             OutlinedCard(
                 onClick = {
@@ -345,6 +537,7 @@ fun LocalUploadFileComp() {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "输入加密密钥：", color = MaterialTheme.colorScheme.secondary)
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth(),
             value = secret,
@@ -473,10 +666,10 @@ fun LocalReceiveFileComp(encryptedFile: File) {
             ) {
 
                 OutlinedTextField(
-                    label = {Text("密钥")},
+                    label = { Text("密钥") },
                     value = secret, onValueChange = {
-                    secret = it
-                } )
+                        secret = it
+                    })
 
                 if (secret.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
