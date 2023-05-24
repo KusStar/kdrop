@@ -47,7 +47,7 @@ fun ServerTransfer(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("C/S 文件服务器传输测试") },
+                title = { Text("C/S 文件服务器传输") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()

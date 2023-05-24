@@ -19,22 +19,22 @@ enum class Routes {
     HOME,
     ABOUT,
     SETTINGS,
-    REMOTE_TEST,
+    REMOTE_TRANSFER,
     CRYPTO_TEST,
     BIOMETRIC_TEST,
     DB_TEST,
     DROP_TEST,
-    LOCAL_TEST,
+    LOCAL_TRANSFER,
     TEST_ENTRIES,
 }
 
 @Composable
 fun Router(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = Routes.TEST_ENTRIES.name) {
+    NavHost(navController = navController, startDestination = Routes.HOME.name) {
         composable(Routes.HOME) { Home(navController) }
+        composable(Routes.REMOTE_TRANSFER) { ServerTransfer(navController) }
+        composable(Routes.LOCAL_TRANSFER) { P2PTransfer(navController) }
         if (BuildConfig.DEBUG) {
-            composable(Routes.REMOTE_TEST) { ServerTransfer(navController) }
-            composable(Routes.LOCAL_TEST) { P2PTransfer(navController) }
             composable(Routes.CRYPTO_TEST) { CryptoTest(navController) }
             composable(Routes.BIOMETRIC_TEST) { BiometricTest(navController) }
             composable(Routes.DB_TEST) { DbTest(navController) }

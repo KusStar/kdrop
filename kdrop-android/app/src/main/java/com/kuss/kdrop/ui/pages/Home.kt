@@ -15,7 +15,7 @@ import com.kuss.kdrop.ui.navigate
 @Composable
 fun Home(navController: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("KDrop") }) },
+        topBar = { TopAppBar(title = { Text("KDrop - 文件加密传输") }) },
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -26,17 +26,17 @@ fun Home(navController: NavController) {
         ) {
 
             Button(onClick = {
-                navController.navigate(Routes.CRYPTO_TEST)
+                navController.navigate(Routes.LOCAL_TRANSFER)
             }) {
-                Text(text = "本地网络传输")
+                Text(text = "P2P点对点传输", style = MaterialTheme.typography.titleMedium)
             }
 
-            Spacer(modifier = Modifier.size(8.dp))
+            Spacer(modifier = Modifier.size(16.dp))
 
             Button(onClick = {
-                navController.navigate(Routes.LOCAL_TEST)
+                navController.navigate(Routes.REMOTE_TRANSFER)
             }) {
-                Text(text = "远程网络传输")
+                Text(text = "C/S中转文件传输", style = MaterialTheme.typography.titleMedium)
             }
 
         }

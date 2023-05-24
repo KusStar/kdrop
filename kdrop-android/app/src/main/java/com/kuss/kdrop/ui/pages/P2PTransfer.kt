@@ -239,7 +239,7 @@ fun P2PTransfer(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("P2P 传输测试") },
+                title = { Text("P2P 点对点传输") },
                 navigationIcon = {
                     IconButton(onClick = {
                         navController.popBackStack()
