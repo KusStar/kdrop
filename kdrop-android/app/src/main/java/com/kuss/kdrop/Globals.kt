@@ -30,11 +30,7 @@ object Globals {
      * @return 返回 [remoteUrl] 或 [localUrl] 其中一个 URL
      */
     fun getBackendUrl(useRelease: Boolean): String {
-        return if (BuildConfig.DEBUG) { // 判断当前是否为开发环境
-            if (useRelease) remoteUrl else localUrl // 如果 useRelease 参数为 true 则返回 [remoteUrl] 否则返回 [localUrl]
-        } else { // 如果当前不处于开发环境则直接返 [remoteUrl]
-            remoteUrl
-        }
+        return remoteUrl
     }
 
     /**

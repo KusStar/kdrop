@@ -15,9 +15,12 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.math.BigInteger
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.UnknownHostException
 import java.nio.ByteOrder
 import java.text.StringCharacterIterator
+import java.util.Collections
+import java.util.Locale
 
 
 fun formatBytes(input: Long): String {
@@ -88,14 +91,19 @@ fun getLocalIp(ctx: Context): String {
 
     val ipByteArray = BigInteger.valueOf(ipAddress.toLong()).toByteArray()
 
-    val ipAddressString: String? = try {
+    var ipAddressString: String? = try {
         InetAddress.getByAddress(ipByteArray).hostAddress
     } catch (ex: UnknownHostException) {
         Log.e("WIFIIP", "Unable to get host address.")
+        ex.printStackTrace()
         null
     }
 
-    return ipAddressString!!
+    if (ipAddressString == null) {
+        ipAddressString = getIPAddress(true)
+    }
+
+    return ipAddressString ?: ""
 }
 
 fun copyToClipboard(context: Context, content: String) {
@@ -119,4 +127,36 @@ fun makeCacheFile(context: Context, name: String): File {
     val file = File(context.cacheDir, name)
     file.createNewFile()
     return file
+}
+
+fun getIPAddress(useIPv4: Boolean): String? {
+    try {
+        val interfaces: List<NetworkInterface> =
+            Collections.list(NetworkInterface.getNetworkInterfaces())
+        for (intf in interfaces) {
+            val addrs: List<InetAddress> = Collections.list(intf.inetAddresses)
+            for (addr in addrs) {
+                if (!addr.isLoopbackAddress) {
+                    val sAddr = addr.hostAddress
+                    //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                    val isIPv4 = sAddr.indexOf(':') < 0
+                    if (useIPv4) {
+                        if (isIPv4) return sAddr
+                    } else {
+                        if (!isIPv4) {
+                            val delim = sAddr.indexOf('%') // drop ip6 zone suffix
+                            return if (delim < 0) sAddr.uppercase(Locale.getDefault()) else sAddr.substring(
+                                0,
+                                delim
+                            ).uppercase(
+                                Locale.getDefault()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } catch (ignored: Exception) {
+    } // for now eat exceptions
+    return ""
 }

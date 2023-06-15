@@ -1,6 +1,8 @@
 package com.kuss.kdrop.ui.pages
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,7 +17,11 @@ import com.kuss.kdrop.ui.navigate
 @Composable
 fun Home(navController: NavController) {
     Scaffold(
-        topBar = { TopAppBar(title = { Text("KDrop - 文件加密传输") }) },
+        topBar = { TopAppBar(title = { Text("KDrop - 文件加密传输") }, actions = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(Icons.Filled.MoreVert, "backIcon")
+            }
+        }) },
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
@@ -24,7 +30,6 @@ fun Home(navController: NavController) {
                 .fillMaxSize()
                 .padding(it),
         ) {
-
             Button(onClick = {
                 navController.navigate(Routes.LOCAL_TRANSFER)
             }) {

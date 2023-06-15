@@ -165,9 +165,9 @@ fun P2PTransfer(navController: NavController) {
                 context as android.app.Activity,
                 arrayOf(Manifest.permission.ACCESS_WIFI_STATE), 0
             )
-        } else {
-            myIp = getLocalIp(context)
         }
+        myIp = getLocalIp(context)
+
     }
 
 
